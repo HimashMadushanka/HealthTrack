@@ -1,50 +1,20 @@
-<?php include 'db.php'; ?>
 <?php
-if(isset($_POST['register'])){
-    $name = trim($_POST['name']);
-    $email = trim($_POST['email']);
-    $password = $_POST['password'];
-    
-    // Server-side validation
-    $errors = [];
-    
-    if(strlen($name) < 2){
-        $errors[] = "Name must be at least 2 characters";
+include 'db.php';
+
+$error = '';
+$success = '';
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $name = $_POST['name'];
+    $email = $_POST['email'];
+    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+
+    $sql = "INSERT INTO users (name, email, password) VALUES ('$name', '$email', '$password')";
+    if ($conn->query($sql)) {
+        $success = "Registration successful!";
+    } else {
+        $error = "Error: " . $conn->error;
     }
-    
-    if(!filter_var($email, FILTER_VALIDATE_EMAIL)){
-        $errors[] = "Invalid email format";
-    }
-    
-    if(strlen($password) < 8){
-        $errors[] = "Password must be at least 8 characters";
-    }
-    
-    // Check if email already exists
-    $check_email = $conn->prepare("SELECT id FROM users WHERE email = ?");
-    $check_email->bind_param("s", $email);
-    $check_email->execute();
-    $check_email->store_result();
-    
-    if($check_email->num_rows > 0){
-        $errors[] = "Email already registered";
-    }
-    
-    if(empty($errors)){
-        $password_hash = password_hash($password, PASSWORD_DEFAULT);
-        
-        // Use prepared statements to prevent SQL injection
-        $stmt = $conn->prepare("INSERT INTO users (name, email, password) VALUES (?, ?, ?)");
-        $stmt->bind_param("sss", $name, $email, $password_hash);
-        
-        if($stmt->execute()){
-            $success = true;
-        } else {
-            $errors[] = "Registration failed. Please try again.";
-        }
-        $stmt->close();
-    }
-    $check_email->close();
 }
 ?>
 <!DOCTYPE html>
@@ -52,237 +22,196 @@ if(isset($_POST['register'])){
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - Create Account</title>
-    <link rel="stylesheet" href="register.css">
-   
+    <title>Register</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .register-container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .register-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .register-header h2 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .register-header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #333;
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            border-left: 4px solid #c33;
+        }
+
+        .success-message {
+            background: #efe;
+            color: #2a7;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            border-left: 4px solid #2a7;
+            text-align: center;
+        }
+
+        .success-message a {
+            color: #2a7;
+            font-weight: 600;
+            text-decoration: none;
+            margin-left: 5px;
+        }
+
+        .success-message a:hover {
+            text-decoration: underline;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .form-footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .form-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .password-hint {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
+    <div class="register-container">
+        <div class="register-header">
             <h2>Create Account</h2>
-            <p>Join us today and get started</p>
+            <p>Sign up to get started</p>
         </div>
-        
-        <div class="form-container">
-            <?php if(isset($success) && $success): ?>
-                <div class="alert alert-success">
-                    ✓ Registration successful! <a href='login.php'>Login here</a>
-                </div>
-            <?php endif; ?>
-            
-            <?php if(isset($errors) && !empty($errors)): ?>
-                <div class="alert alert-error">
-                    <?php foreach($errors as $error): ?>
-                        • <?php echo htmlspecialchars($error); ?><br>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
-            
-            <form method="post" id="registerForm" novalidate>
-                <div class="form-group">
-                    <label for="name">Full Name</label>
-                    <div class="input-wrapper">
-                        <input type="text" name="name" id="name" placeholder="Enter your full name" required>
-                        <span class="input-icon" id="nameIcon"></span>
-                    </div>
-                    <span class="error-message" id="nameError"></span>
-                </div>
 
-                <div class="form-group">
-                    <label for="email">Email Address</label>
-                    <div class="input-wrapper">
-                        <input type="email" name="email" id="email" placeholder="Enter your email" required>
-                        <span class="input-icon" id="emailIcon"></span>
-                    </div>
-                    <span class="error-message" id="emailError"></span>
-                </div>
+        <?php if ($error): ?>
+            <div class="error-message">
+                <?php echo htmlspecialchars($error); ?>
+            </div>
+        <?php endif; ?>
 
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <div class="input-wrapper">
-                        <input type="password" name="password" id="password" placeholder="Create a strong password" required>
-                        <button type="button" class="toggle-password" id="togglePassword">👁️</button>
-                    </div>
-                    <div class="password-strength" id="passwordStrength">
-                        <div class="strength-bar">
-                            <div class="strength-bar-fill"></div>
-                        </div>
-                        <span class="strength-text"></span>
-                    </div>
-                    <span class="error-message" id="passwordError"></span>
-                </div>
+        <?php if ($success): ?>
+            <div class="success-message">
+                <?php echo htmlspecialchars($success); ?>
+                <a href="login.php">Login here</a>
+            </div>
+        <?php endif; ?>
 
-                <button type="submit" name="register" id="submitBtn">Create Account</button>
-                
-                <div class="login-link">
-                    Already have an account? <a href="login.php">Login here</a>
-                </div>
-            </form>
+        <form method="post">
+            <div class="form-group">
+                <label for="name">Full Name</label>
+                <input type="text" id="name" name="name" placeholder="Enter your full name" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" placeholder="Enter your email" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Create a password" minlength="6" required>
+                <div class="password-hint">Minimum 6 characters</div>
+            </div>
+
+            <button type="submit" class="submit-btn">Register</button>
+        </form>
+
+        <div class="form-footer">
+            Already have an account? <a href="login.php">Login</a>
         </div>
     </div>
-
-    <script>
-        const form = document.getElementById('registerForm');
-        const nameInput = document.getElementById('name');
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
-        const togglePassword = document.getElementById('togglePassword');
-        const submitBtn = document.getElementById('submitBtn');
-
-        // Toggle password visibility
-        togglePassword.addEventListener('click', function() {
-            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            passwordInput.setAttribute('type', type);
-            this.textContent = type === 'password' ? '👁️' : '🙈';
-        });
-
-        // Name validation
-        nameInput.addEventListener('input', function() {
-            const value = this.value.trim();
-            const icon = document.getElementById('nameIcon');
-            const error = document.getElementById('nameError');
-            
-            if(value.length === 0) {
-                this.classList.remove('error', 'success');
-                icon.classList.remove('show');
-                error.classList.remove('show');
-            } else if(value.length < 2) {
-                this.classList.add('error');
-                this.classList.remove('success');
-                icon.className = 'input-icon show error';
-                icon.textContent = '✕';
-                error.textContent = 'Name must be at least 2 characters';
-                error.classList.add('show');
-            } else {
-                this.classList.remove('error');
-                this.classList.add('success');
-                icon.className = 'input-icon show success';
-                icon.textContent = '✓';
-                error.classList.remove('show');
-            }
-        });
-
-        // Email validation
-        emailInput.addEventListener('input', function() {
-            const value = this.value.trim();
-            const icon = document.getElementById('emailIcon');
-            const error = document.getElementById('emailError');
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            
-            if(value.length === 0) {
-                this.classList.remove('error', 'success');
-                icon.classList.remove('show');
-                error.classList.remove('show');
-            } else if(!emailRegex.test(value)) {
-                this.classList.add('error');
-                this.classList.remove('success');
-                icon.className = 'input-icon show error';
-                icon.textContent = '✕';
-                error.textContent = 'Please enter a valid email address';
-                error.classList.add('show');
-            } else {
-                this.classList.remove('error');
-                this.classList.add('success');
-                icon.className = 'input-icon show success';
-                icon.textContent = '✓';
-                error.classList.remove('show');
-            }
-        });
-
-        // Password strength checker
-        passwordInput.addEventListener('input', function() {
-            const value = this.value;
-            const strengthContainer = document.getElementById('passwordStrength');
-            const error = document.getElementById('passwordError');
-            
-            if(value.length === 0) {
-                strengthContainer.className = 'password-strength';
-                strengthContainer.querySelector('.strength-text').textContent = '';
-                this.classList.remove('error', 'success');
-                error.classList.remove('show');
-                return;
-            }
-            
-            let strength = 0;
-            
-            // Length check
-            if(value.length >= 8) strength++;
-            if(value.length >= 12) strength++;
-            
-            // Character variety checks
-            if(/[a-z]/.test(value) && /[A-Z]/.test(value)) strength++;
-            if(/[0-9]/.test(value)) strength++;
-            if(/[^a-zA-Z0-9]/.test(value)) strength++;
-            
-            const strengthText = strengthContainer.querySelector('.strength-text');
-            
-            if(strength <= 2) {
-                strengthContainer.className = 'password-strength strength-weak';
-                strengthText.textContent = 'Weak password';
-                strengthText.style.color = '#dc3545';
-                this.classList.add('error');
-                this.classList.remove('success');
-                error.textContent = 'Password must be at least 8 characters';
-                error.classList.add('show');
-            } else if(strength <= 4) {
-                strengthContainer.className = 'password-strength strength-medium';
-                strengthText.textContent = 'Medium strength';
-                strengthText.style.color = '#ffc107';
-                this.classList.remove('error');
-                this.classList.add('success');
-                error.classList.remove('show');
-            } else {
-                strengthContainer.className = 'password-strength strength-strong';
-                strengthText.textContent = 'Strong password';
-                strengthText.style.color = '#28a745';
-                this.classList.remove('error');
-                this.classList.add('success');
-                error.classList.remove('show');
-            }
-        });
-
-        // Form submission validation
-        form.addEventListener('submit', function(e) {
-            let isValid = true;
-            
-            // Validate name
-            if(nameInput.value.trim().length < 2) {
-                nameInput.classList.add('error');
-                document.getElementById('nameError').textContent = 'Name must be at least 2 characters';
-                document.getElementById('nameError').classList.add('show');
-                isValid = false;
-            }
-            
-            // Validate email
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if(!emailRegex.test(emailInput.value.trim())) {
-                emailInput.classList.add('error');
-                document.getElementById('emailError').textContent = 'Please enter a valid email';
-                document.getElementById('emailError').classList.add('show');
-                isValid = false;
-            }
-            
-            // Validate password
-            if(passwordInput.value.length < 8) {
-                passwordInput.classList.add('error');
-                document.getElementById('passwordError').textContent = 'Password must be at least 8 characters';
-                document.getElementById('passwordError').classList.add('show');
-                isValid = false;
-            }
-            
-            if(!isValid) {
-                e.preventDefault();
-                submitBtn.disabled = false;
-            } else {
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Creating Account...';
-            }
-        });
-
-        // Prevent multiple submissions
-        form.addEventListener('submit', function() {
-            submitBtn.disabled = true;
-        });
-    </script>
 </body>
 </html>

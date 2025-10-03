@@ -1,40 +1,25 @@
-<?php include 'db.php'; session_start(); ?>
 <?php
-$error = '';
-$email_value = '';
+session_start();
+include 'db.php';
 
-if(isset($_POST['login'])){
-    $email = trim($_POST['email']);
+$error = '';
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $email = $_POST['email'];
     $password = $_POST['password'];
-    $email_value = $email;
-    
-    // Server-side validation
-    if(empty($email) || empty($password)){
-        $error = "Please fill in all fields";
-    } elseif(!filter_var($email, FILTER_VALIDATE_EMAIL)){
-        $error = "Invalid email format";
-    } else {
-        // Use prepared statement to prevent SQL injection
-        $stmt = $conn->prepare("SELECT id, name, email, password FROM users WHERE email = ?");
-        $stmt->bind_param("s", $email);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        if($result->num_rows > 0){
-            $user = $result->fetch_assoc();
-            if(password_verify($password, $user['password'])){
-                $_SESSION['user_id'] = $user['id'];
-                $_SESSION['user_name'] = $user['name'];
-                $_SESSION['user_email'] = $user['email'];
-                header("Location: dashboard.php");
-                exit();
-            } else {
-                $error = "Invalid email or password";
-            }
+
+    $res = $conn->query("SELECT * FROM users WHERE email='$email'");
+    if ($res->num_rows > 0) {
+        $row = $res->fetch_assoc();
+        if (password_verify($password, $row['password'])) {
+            $_SESSION['user_id'] = $row['id'];
+            header("Location: dashboard.php");
+            exit();
         } else {
-            $error = "Invalid email or password";
+            $error = "Invalid password!";
         }
-        $stmt->close();
+    } else {
+        $error = "User not found!";
     }
 }
 ?>
@@ -43,193 +28,155 @@ if(isset($_POST['login'])){
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Welcome Back</title>
-    <link rel="stylesheet" href="login.css">
-   
+    <title>Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .login-header h2 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .login-header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #333;
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            border-left: 4px solid #c33;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .form-footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .form-footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
+    <div class="login-container">
+        <div class="login-header">
             <h2>Welcome Back</h2>
-            <p>Login to continue to your account</p>
+            <p>Please login to your account</p>
         </div>
-        
-        <div class="form-container">
-            <?php if(!empty($error)): ?>
-                <div class="alert alert-error">
-                    <span>⚠️</span>
-                    <span><?php echo htmlspecialchars($error); ?></span>
-                </div>
-            <?php endif; ?>
-            
-            <form method="post" id="loginForm" novalidate>
-                <div class="form-group">
-                    <label for="email">Email Address</label>
-                    <div class="input-wrapper">
-                        <input type="email" name="email" id="email" placeholder="Enter your email" 
-                               value="<?php echo htmlspecialchars($email_value); ?>" required>
-                        <span class="input-icon" id="emailIcon"></span>
-                    </div>
-                    <span class="error-message" id="emailError"></span>
-                </div>
 
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <div class="input-wrapper">
-                        <input type="password" name="password" id="password" placeholder="Enter your password" required>
-                        <button type="button" class="toggle-password" id="togglePassword">👁️</button>
-                    </div>
-                    <span class="error-message" id="passwordError"></span>
-                </div>
+        <?php if ($error): ?>
+            <div class="error-message">
+                <?php echo htmlspecialchars($error); ?>
+            </div>
+        <?php endif; ?>
 
-                <div class="remember-me">
-                    <input type="checkbox" id="remember" name="remember">
-                    <label for="remember">Remember me</label>
-                </div>
+        <form method="post">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" placeholder="Enter your email" required>
+            </div>
 
-                <div class="forgot-password">
-                    <a href="forgot-password.php">Forgot Password?</a>
-                </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Enter your password" required>
+            </div>
 
-                <button type="submit" name="login" id="submitBtn">Login</button>
-                
-                <div class="register-link">
-                    Don't have an account? <a href="register.php">Register here</a>
-                </div>
-            </form>
+            <button type="submit" class="submit-btn">Login</button>
+        </form>
+
+        <div class="form-footer">
+            Don't have an account? <a href="register.php">Sign up</a>
         </div>
     </div>
-
-    <script>
-        const form = document.getElementById('loginForm');
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
-        const togglePassword = document.getElementById('togglePassword');
-        const submitBtn = document.getElementById('submitBtn');
-
-        // Toggle password visibility
-        togglePassword.addEventListener('click', function() {
-            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            passwordInput.setAttribute('type', type);
-            this.textContent = type === 'password' ? '👁️' : '🙈';
-        });
-
-        // Email validation
-        emailInput.addEventListener('input', function() {
-            const value = this.value.trim();
-            const icon = document.getElementById('emailIcon');
-            const error = document.getElementById('emailError');
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            
-            if(value.length === 0) {
-                this.classList.remove('error', 'success');
-                icon.classList.remove('show');
-                error.classList.remove('show');
-            } else if(!emailRegex.test(value)) {
-                this.classList.add('error');
-                this.classList.remove('success');
-                icon.className = 'input-icon show error';
-                icon.textContent = '✕';
-                error.textContent = 'Please enter a valid email address';
-                error.classList.add('show');
-            } else {
-                this.classList.remove('error');
-                this.classList.add('success');
-                icon.className = 'input-icon show success';
-                icon.textContent = '✓';
-                error.classList.remove('show');
-            }
-        });
-
-        // Password validation
-        passwordInput.addEventListener('input', function() {
-            const value = this.value;
-            const error = document.getElementById('passwordError');
-            
-            if(value.length === 0) {
-                this.classList.remove('error', 'success');
-                error.classList.remove('show');
-            } else if(value.length < 6) {
-                this.classList.add('error');
-                this.classList.remove('success');
-                error.textContent = 'Password is too short';
-                error.classList.add('show');
-            } else {
-                this.classList.remove('error');
-                this.classList.add('success');
-                error.classList.remove('show');
-            }
-        });
-
-        // Form submission validation
-        form.addEventListener('submit', function(e) {
-            let isValid = true;
-            
-            // Validate email
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if(!emailRegex.test(emailInput.value.trim())) {
-                emailInput.classList.add('error');
-                document.getElementById('emailError').textContent = 'Please enter a valid email';
-                document.getElementById('emailError').classList.add('show');
-                isValid = false;
-            }
-            
-            // Validate password
-            if(passwordInput.value.length === 0) {
-                passwordInput.classList.add('error');
-                document.getElementById('passwordError').textContent = 'Please enter your password';
-                document.getElementById('passwordError').classList.add('show');
-                isValid = false;
-            }
-            
-            if(!isValid) {
-                e.preventDefault();
-                submitBtn.disabled = false;
-            } else {
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Logging in...';
-            }
-        });
-
-        // Remember me functionality
-        const rememberCheckbox = document.getElementById('remember');
-        
-        // Load saved email if exists
-        if(localStorage.getItem('rememberedEmail')) {
-            emailInput.value = localStorage.getItem('rememberedEmail');
-            rememberCheckbox.checked = true;
-        }
-        
-        // Save email when form is submitted
-        form.addEventListener('submit', function() {
-            if(rememberCheckbox.checked) {
-                localStorage.setItem('rememberedEmail', emailInput.value);
-            } else {
-                localStorage.removeItem('rememberedEmail');
-            }
-        });
-
-        // Auto-focus on email input if empty, otherwise focus on password
-        window.addEventListener('load', function() {
-            if(emailInput.value.trim() === '') {
-                emailInput.focus();
-            } else {
-                passwordInput.focus();
-            }
-        });
-
-        // Prevent multiple submissions
-        form.addEventListener('submit', function() {
-            submitBtn.disabled = true;
-        });
-
-        // Clear error messages when user starts typing
-        const inputs = document.querySelectorAll('input[type="email"], input[type="password"]');
-        inputs.forEach(input => {
-            input.addEventListener('focus', function() {
-                this.classList.remove('error');
-            });
-        });
-    </script>
 </body>
 </html>
