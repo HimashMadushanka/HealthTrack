@@ -198,6 +198,19 @@ $res = $conn->query("SELECT * FROM health_records WHERE user_id='$uid' ORDER BY 
             background: #fce4ec;
             color: #c2185b;
         }
+.delete-btn {
+    background: #ff4d4d;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background 0.3s;
+}
+
+.delete-btn:hover {
+    background: #e60000;
+}
 
         @media (max-width: 768px) {
             .navbar {
@@ -218,6 +231,7 @@ $res = $conn->query("SELECT * FROM health_records WHERE user_id='$uid' ORDER BY 
                 padding: 10px;
             }
         }
+
     </style>
 </head>
 <body>
@@ -239,14 +253,16 @@ $res = $conn->query("SELECT * FROM health_records WHERE user_id='$uid' ORDER BY 
             <?php if ($res->num_rows > 0): ?>
                 <table>
                     <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Weight</th>
-                            <th>Calories</th>
-                            <th>Steps</th>
-                            <th>Blood Pressure</th>
-                        </tr>
-                    </thead>
+    <tr>
+        <th>Date</th>
+        <th>Weight</th>
+        <th>Calories</th>
+        <th>Steps</th>
+        <th>Blood Pressure</th>
+        <th>Action</th>
+    </tr>
+</thead>
+
                     <tbody>
                         <?php while ($row = $res->fetch_assoc()): ?>
                         <tr>
@@ -271,6 +287,12 @@ $res = $conn->query("SELECT * FROM health_records WHERE user_id='$uid' ORDER BY 
                                     <?php echo htmlspecialchars($row['bp']); ?>
                                 </span>
                             </td>
+                            <td>
+    <a href="delete_record.php?id=<?php echo $row['id']; ?>" 
+       onclick="return confirm('Are you sure you want to delete this record?');"
+       class="delete-btn">Delete</a>
+</td>
+
                         </tr>
                         <?php endwhile; ?>
                     </tbody>

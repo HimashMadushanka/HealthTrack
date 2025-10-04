@@ -20,19 +20,32 @@ $stats = $statsQuery->fetch_assoc();
 // Get latest record
 $latestQuery = $conn->query("SELECT * FROM health_records WHERE user_id='$uid' ORDER BY date DESC LIMIT 1");
 $latestRecord = $latestQuery->fetch_assoc();
+
+// Prepare data for charts
+$dates = [];
+$weights = [];
+$steps = [];
+$calories = [];
+
+// Fetch all records in ascending order for chart display
+$chartQuery = $conn->query("SELECT * FROM health_records WHERE user_id='$uid' ORDER BY date ASC");
+while ($row = $chartQuery->fetch_assoc()) {
+    $dates[] = $row['date'];
+    $weights[] = (float)$row['weight'];
+    $steps[] = (int)$row['steps'];
+    $calories[] = (int)$row['calories'];
+}
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HealthTrack Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -50,9 +63,7 @@ $latestRecord = $latestQuery->fetch_assoc();
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
-        .navbar h1 {
-            font-size: 24px;
-        }
+        .navbar h1 { font-size: 24px; }
 
         .navbar .user-info {
             display: flex;
@@ -65,7 +76,7 @@ $latestRecord = $latestQuery->fetch_assoc();
             color: white;
             border: 2px solid white;
             padding: 8px 20px;
-            border-radius: 5px;
+            border-radius: 10px;
             cursor: pointer;
             text-decoration: none;
             font-weight: 500;
@@ -93,15 +104,8 @@ $latestRecord = $latestQuery->fetch_assoc();
             text-align: center;
         }
 
-        .welcome-section h2 {
-            font-size: 36px;
-            margin-bottom: 10px;
-        }
-
-        .welcome-section p {
-            font-size: 18px;
-            opacity: 0.9;
-        }
+        .welcome-section h2 { font-size: 36px; margin-bottom: 10px; }
+        .welcome-section p { font-size: 18px; opacity: 0.9; }
 
         .stats-grid {
             display: grid;
@@ -124,24 +128,9 @@ $latestRecord = $latestQuery->fetch_assoc();
             box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
         }
 
-        .stat-icon {
-            font-size: 48px;
-            margin-bottom: 15px;
-        }
-
-        .stat-value {
-            font-size: 32px;
-            font-weight: bold;
-            color: #667eea;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            color: #666;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+        .stat-icon { font-size: 48px; margin-bottom: 15px; }
+        .stat-value { font-size: 32px; font-weight: bold; color: #667eea; }
+        .stat-label { color: #666; font-size: 14px; text-transform: uppercase; }
 
         .action-cards {
             display: grid;
@@ -156,7 +145,6 @@ $latestRecord = $latestQuery->fetch_assoc();
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
             text-align: center;
-            transition: transform 0.3s, box-shadow 0.3s;
         }
 
         .action-card:hover {
@@ -164,24 +152,7 @@ $latestRecord = $latestQuery->fetch_assoc();
             box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
         }
 
-        .action-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-        }
-
-        .action-card h3 {
-            color: #333;
-            font-size: 22px;
-            margin-bottom: 10px;
-        }
-
-        .action-card p {
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 20px;
-            line-height: 1.6;
-        }
-
+        .action-icon { font-size: 64px; margin-bottom: 20px; }
         .action-btn {
             display: inline-block;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -190,7 +161,7 @@ $latestRecord = $latestQuery->fetch_assoc();
             border-radius: 5px;
             text-decoration: none;
             font-weight: 600;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: 0.2s;
         }
 
         .action-btn:hover {
@@ -198,20 +169,47 @@ $latestRecord = $latestQuery->fetch_assoc();
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
 
+        .chart-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+        }
+
+        .chart-wrapper {
+            background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.08);
+        }
+
+        .chart-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-icon {
+            font-size: 24px;
+        }
+
+        .chart-container canvas {
+            width: 100%;
+            max-height: 350px;
+        }
+
         .latest-record {
             background: white;
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-        }
-
-        .latest-record h3 {
-            color: #333;
-            font-size: 22px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
         }
 
         .record-grid {
@@ -227,99 +225,112 @@ $latestRecord = $latestQuery->fetch_assoc();
             border-left: 4px solid #667eea;
         }
 
-        .record-item .label {
-            font-size: 12px;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 5px;
-        }
+        .record-item .label { font-size: 12px; color: #666; text-transform: uppercase; }
+        .record-item .value { font-size: 20px; font-weight: bold; color: #333; }
 
-        .record-item .value {
-            font-size: 20px;
-            font-weight: bold;
-            color: #333;
-        }
-
-        .no-records {
-            text-align: center;
-            padding: 40px;
-            color: #999;
-        }
+        .no-records { text-align: center; padding: 40px; color: #999; }
 
         @media (max-width: 768px) {
-            .navbar {
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .welcome-section {
-                padding: 30px 20px;
-            }
-
-            .welcome-section h2 {
-                font-size: 28px;
-            }
-
-            .stats-grid,
-            .action-cards {
-                grid-template-columns: 1fr;
-            }
+            .stats-grid, .action-cards { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
-    <div class="navbar">
-        <h1>HealthTrack</h1>
-        <div class="user-info">
-            <span>Welcome, <?php echo htmlspecialchars($user['name']); ?></span>
-            <a href="logout.php" class="logout-btn">Logout</a>
+
+<div class="navbar">
+    <h1>HealthTrack</h1>
+    <div class="user-info">
+        <span>Welcome, <?php echo htmlspecialchars($user['name']); ?></span>
+        <a href="logout.php" class="logout-btn">Logout</a>
+    </div>
+</div>
+
+<div class="container">
+    <div class="welcome-section">
+        <h2>Welcome to Your Health Dashboard</h2>
+        <p>Track your health metrics and stay on top of your wellness journey</p>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">📊</div>
+            <div class="stat-value"><?php echo $stats['total_records']; ?></div>
+            <div class="stat-label">Total Records</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">🎯</div>
+            <div class="stat-value"><?php echo date('F Y'); ?></div>
+            <div class="stat-label">Current Month</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">💪</div>
+            <div class="stat-value">Active</div>
+            <div class="stat-label">Status</div>
         </div>
     </div>
 
-    <div class="container">
-        <div class="welcome-section">
-            <h2>Welcome to Your Health Dashboard</h2>
-            <p>Track your health metrics and stay on top of your wellness journey</p>
+    <div class="action-cards">
+        <div class="action-card">
+            <div class="action-icon">➕</div>
+            <h3>Add Health Record</h3>
+            <p>Log your daily health metrics including weight, calories, steps, and blood pressure</p><br/>
+            <a href="add_record.php" class="action-btn">Add Record</a>
+        </div>
+        <div class="action-card">
+            <div class="action-icon">📋</div>
+            <h3>View Records</h3>
+            <p>Browse through your complete health history and track your progress over time</p><br/>
+            <a href="view_records.php" class="action-btn">View All Records</a><br/>
+        <div>
+            <a href="export_csv.php" class="action-btn" style="background:#4CAF50; ">🧾 Export CSV</a>
+            <a href="export_pdf.php" class="action-btn" style="background:#E53935;">📄 Export PDF</a>
+         </div>
+        </div>
+    </div>
+
+        <div class="action-card">
+            <div class="action-icon">🧮</div>
+            <h3>BMI Calculater </h3>
+            <p>Calculate and record your Body Mass Index by bmi Calculator</p>
+            <br/>
+             <a href="bmi.php" class="action-btn"> Go to Calculate </a>
+</div>
+
+
+
+
+    </div>
+
+    <!-- 📈 Health Progress Graphs -->
+    <div class="chart-container">
+        <h3 style="margin-bottom:30px; color:#333; font-size: 24px;">📊 Health Progress Overview</h3>
+        
+        <div class="chart-wrapper">
+            <div class="chart-title">
+                <span class="chart-icon">⚖️</span>
+                <span>Weight Tracking</span>
+            </div>
+            <canvas id="weightChart"></canvas>
         </div>
 
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon">📊</div>
-                <div class="stat-value"><?php echo $stats['total_records']; ?></div>
-                <div class="stat-label">Total Records</div>
+        <div class="chart-wrapper">
+            <div class="chart-title">
+                <span class="chart-icon">🚶</span>
+                <span>Daily Steps</span>
             </div>
-            
-            <div class="stat-card">
-                <div class="stat-icon">🎯</div>
-                <div class="stat-value"><?php echo date('F Y'); ?></div>
-                <div class="stat-label">Current Month</div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-icon">💪</div>
-                <div class="stat-value">Active</div>
-                <div class="stat-label">Status</div>
-            </div>
+            <canvas id="stepsChart"></canvas>
         </div>
 
-        <div class="action-cards">
-            <div class="action-card">
-                <div class="action-icon">➕</div>
-                <h3>Add Health Record</h3>
-                <p>Log your daily health metrics including weight, calories, steps, and blood pressure</p>
-                <a href="add_record.php" class="action-btn">Add Record</a>
+        <div class="chart-wrapper">
+            <div class="chart-title">
+                <span class="chart-icon">🔥</span>
+                <span>Calorie Intake</span>
             </div>
-
-            <div class="action-card">
-                <div class="action-icon">📋</div>
-                <h3>View Records</h3>
-                <p>Browse through your complete health history and track your progress over time</p>
-                <a href="view_records.php" class="action-btn">View All Records</a>
-            </div>
+            <canvas id="caloriesChart"></canvas>
         </div>
+    </div>
 
-        <?php if ($latestRecord): ?>
+    <?php if ($latestRecord): ?>
         <div class="latest-record">
             <h3>📈 Latest Health Record</h3>
             <div class="record-grid">
@@ -345,17 +356,316 @@ $latestRecord = $latestQuery->fetch_assoc();
                 </div>
             </div>
         </div>
-        <?php else: ?>
+    <?php else: ?>
         <div class="latest-record">
             <div class="no-records">
                 <div style="font-size: 64px; margin-bottom: 20px;">📊</div>
                 <h3>No Records Yet</h3>
                 <p>Start your health journey by adding your first record!</p>
-                <br>
                 <a href="add_record.php" class="action-btn">Add Your First Record</a>
             </div>
         </div>
-        <?php endif; ?>
-    </div>
+    <?php endif; ?>
+</div>
+
+<script>
+const labels = <?php echo json_encode($dates); ?>;
+
+// Enhanced chart options with gradients
+const createGradient = (ctx, color1, color2) => {
+    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+    gradient.addColorStop(0, color1);
+    gradient.addColorStop(1, color2);
+    return gradient;
+};
+
+// Weight Chart with Gradient
+const weightCtx = document.getElementById('weightChart').getContext('2d');
+const weightGradient = createGradient(weightCtx, 'rgba(102, 126, 234, 0.4)', 'rgba(102, 126, 234, 0.01)');
+
+new Chart(weightCtx, {
+    type: 'line',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Weight (kg)',
+            data: <?php echo json_encode($weights); ?>,
+            borderColor: '#667eea',
+            backgroundColor: weightGradient,
+            borderWidth: 4,
+            tension: 0.4,
+            fill: true,
+            pointRadius: 6,
+            pointHoverRadius: 9,
+            pointBackgroundColor: '#667eea',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 3,
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: '#667eea',
+            pointHoverBorderWidth: 4,
+            pointShadowOffsetX: 3,
+            pointShadowOffsetY: 3,
+            pointShadowBlur: 10,
+            pointShadowColor: 'rgba(102, 126, 234, 0.5)'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        interaction: {
+            mode: 'index',
+            intersect: false
+        },
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top',
+                labels: {
+                    font: { size: 14, weight: 'bold' },
+                    padding: 20,
+                    usePointStyle: true,
+                    pointStyle: 'circle'
+                }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(102, 126, 234, 0.95)',
+                padding: 16,
+                titleFont: { size: 15, weight: 'bold' },
+                bodyFont: { size: 14 },
+                borderColor: '#667eea',
+                borderWidth: 2,
+                cornerRadius: 8,
+                displayColors: true,
+                callbacks: {
+                    label: function(context) {
+                        return ' ' + context.parsed.y + ' kg';
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: false,
+                grid: {
+                    color: 'rgba(102, 126, 234, 0.08)',
+                    drawBorder: false
+                },
+                ticks: {
+                    font: { size: 13, weight: '500' },
+                    color: '#667eea',
+                    padding: 10,
+                    callback: function(value) {
+                        return value + ' kg';
+                    }
+                }
+            },
+            x: {
+                grid: {
+                    display: false,
+                    drawBorder: false
+                },
+                ticks: {
+                    font: { size: 12, weight: '500' },
+                    color: '#666',
+                    maxRotation: 45,
+                    minRotation: 0
+                }
+            }
+        },
+        animation: {
+            duration: 2000,
+            easing: 'easeInOutQuart'
+        }
+    }
+});
+
+// Steps Chart with Gradient Bars
+const stepsCtx = document.getElementById('stepsChart').getContext('2d');
+const stepsGradient = createGradient(stepsCtx, 'rgba(66, 165, 245, 1)', 'rgba(66, 165, 245, 0.5)');
+
+new Chart(stepsCtx, {
+    type: 'bar',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Steps Count',
+            data: <?php echo json_encode($steps); ?>,
+            backgroundColor: stepsGradient,
+            borderColor: '#42a5f5',
+            borderWidth: 2,
+            borderRadius: 10,
+            borderSkipped: false,
+            hoverBackgroundColor: '#1e88e5',
+            hoverBorderColor: '#1565c0',
+            hoverBorderWidth: 3
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        interaction: {
+            mode: 'index',
+            intersect: false
+        },
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top',
+                labels: {
+                    font: { size: 14, weight: 'bold' },
+                    padding: 20,
+                    usePointStyle: true,
+                    pointStyle: 'rect'
+                }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(66, 165, 245, 0.95)',
+                padding: 16,
+                titleFont: { size: 15, weight: 'bold' },
+                bodyFont: { size: 14 },
+                borderColor: '#42a5f5',
+                borderWidth: 2,
+                cornerRadius: 8,
+                displayColors: true,
+                callbacks: {
+                    label: function(context) {
+                        return ' ' + context.parsed.y.toLocaleString() + ' steps';
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(66, 165, 245, 0.08)',
+                    drawBorder: false
+                },
+                ticks: {
+                    font: { size: 13, weight: '500' },
+                    color: '#42a5f5',
+                    padding: 10,
+                    callback: function(value) {
+                        return value.toLocaleString();
+                    }
+                }
+            },
+            x: {
+                grid: {
+                    display: false,
+                    drawBorder: false
+                },
+                ticks: {
+                    font: { size: 12, weight: '500' },
+                    color: '#666',
+                    maxRotation: 45,
+                    minRotation: 0
+                }
+            }
+        },
+        animation: {
+            duration: 2000,
+            easing: 'easeInOutQuart'
+        }
+    }
+});
+
+// Calories Chart with Gradient
+const caloriesCtx = document.getElementById('caloriesChart').getContext('2d');
+const caloriesGradient = createGradient(caloriesCtx, 'rgba(255, 152, 0, 0.4)', 'rgba(255, 152, 0, 0.01)');
+
+new Chart(caloriesCtx, {
+    type: 'line',
+    data: {
+        labels: labels,
+        datasets: [{
+            label: 'Calories (kcal)',
+            data: <?php echo json_encode($calories); ?>,
+            borderColor: '#ff9800',
+            backgroundColor: caloriesGradient,
+            borderWidth: 4,
+            tension: 0.4,
+            fill: true,
+            pointRadius: 6,
+            pointHoverRadius: 9,
+            pointBackgroundColor: '#ff9800',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 3,
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: '#ff9800',
+            pointHoverBorderWidth: 4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        interaction: {
+            mode: 'index',
+            intersect: false
+        },
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top',
+                labels: {
+                    font: { size: 14, weight: 'bold' },
+                    padding: 20,
+                    usePointStyle: true,
+                    pointStyle: 'circle'
+                }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(255, 152, 0, 0.95)',
+                padding: 16,
+                titleFont: { size: 15, weight: 'bold' },
+                bodyFont: { size: 14 },
+                borderColor: '#ff9800',
+                borderWidth: 2,
+                cornerRadius: 8,
+                displayColors: true,
+                callbacks: {
+                    label: function(context) {
+                        return ' ' + context.parsed.y.toLocaleString() + ' kcal';
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(255, 152, 0, 0.08)',
+                    drawBorder: false
+                },
+                ticks: {
+                    font: { size: 13, weight: '500' },
+                    color: '#ff9800',
+                    padding: 10,
+                    callback: function(value) {
+                        return value.toLocaleString() + ' kcal';
+                    }
+                }
+            },
+            x: {
+                grid: {
+                    display: false,
+                    drawBorder: false
+                },
+                ticks: {
+                    font: { size: 12, weight: '500' },
+                    color: '#666',
+                    maxRotation: 45,
+                    minRotation: 0
+                }
+            }
+        },
+        animation: {
+            duration: 2000,
+            easing: 'easeInOutQuart'
+        }
+    }
+});
+</script>
+
 </body>
 </html>
