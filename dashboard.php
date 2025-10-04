@@ -375,6 +375,7 @@ while ($row = $chartQuery->fetch_assoc()) {
     <?php endif; ?>
 </div>
 
+
 <script>
 const labels = <?php echo json_encode($dates); ?>;
 
