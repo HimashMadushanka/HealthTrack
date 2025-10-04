@@ -53,6 +53,8 @@ while ($row = $chartQuery->fetch_assoc()) {
             min-height: 100vh;
         }
 
+
+
         .navbar {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -239,9 +241,14 @@ while ($row = $chartQuery->fetch_assoc()) {
 
 <div class="navbar">
     <h1>HealthTrack</h1>
+    
+
     <div class="user-info">
         <span>Welcome, <?php echo htmlspecialchars($user['name']); ?></span>
         <a href="logout.php" class="logout-btn">Logout</a>
+       <a href="profile.php" class="logout-btn">Profile</a>
+
+
     </div>
 </div>
 
@@ -665,6 +672,19 @@ new Chart(caloriesCtx, {
         }
     }
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
 </script>
 
 </body>
