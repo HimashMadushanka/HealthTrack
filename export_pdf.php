@@ -1,5 +1,3 @@
-
-
 <?php
 require('fpdf/fpdf.php');  // FPDF library file
 include 'db.php';
