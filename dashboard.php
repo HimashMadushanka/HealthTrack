@@ -19,8 +19,27 @@ $todayReminders = $conn->query("
 ");
 
 
+$conn->query("UPDATE goals g
+SET g.current_value = (
+    SELECT weight FROM health_records h
+    WHERE h.user_id = g.user_id AND g.type='weight'
+    ORDER BY h.date DESC LIMIT 1
+)
+WHERE g.user_id='$uid' AND g.type='weight'");
 
+$conn->query("UPDATE goals g
+SET g.current_value = (
+    SELECT SUM(steps) FROM health_records h
+    WHERE h.user_id = g.user_id AND g.type='steps' AND DATE(h.date) = CURDATE()
+)
+WHERE g.user_id='$uid' AND g.type='steps'");
 
+$conn->query("UPDATE goals g
+SET g.current_value = (
+    SELECT SUM(calories) FROM health_records h
+    WHERE h.user_id = g.user_id AND g.type='calories' AND DATE(h.date) = CURDATE()
+)
+WHERE g.user_id='$uid' AND g.type='calories'");
 
 
 // Get user info
@@ -401,6 +420,23 @@ while ($row = $chartQuery->fetch_assoc()) {
     <?php endif; ?>
 </div>
 
+<div class="action-card">
+    <div class="action-icon">🎯</div>
+    <h3>Your Goals</h3>
+    <?php
+    $goals = $conn->query("SELECT * FROM goals WHERE user_id='$uid'");
+    if($goals->num_rows > 0){
+        while($g = $goals->fetch_assoc()){
+            $progress = $g['current_value'] / $g['target_value'] * 100;
+            if($progress > 100) $progress = 100;
+            echo "<p>{$g['type']}: {$g['current_value']} / {$g['target_value']}</p>";
+            echo "<div class='progress-bar'><div class='progress-fill' style='width:{$progress}%; background:#42a5f5;'>{$progress}%</div></div>";
+        }
+    } else {
+        echo "<p>No goals set. <a href='goals.php'>Set Now</a></p>";
+    }
+    ?>
+</div>
 
 
     </div>
