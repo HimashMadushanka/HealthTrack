@@ -9,6 +9,20 @@ if (!isset($_SESSION['user_id'])) {
 
 $uid = $_SESSION['user_id'];
 
+
+
+
+$todayReminders = $conn->query("
+    SELECT * FROM reminders 
+    WHERE user_id='$uid' 
+    ORDER BY reminder_time ASC
+");
+
+
+
+
+
+
 // Get user info
 $userQuery = $conn->query("SELECT name FROM users WHERE id='$uid'");
 $user = $userQuery->fetch_assoc();
@@ -227,6 +241,73 @@ while ($row = $chartQuery->fetch_assoc()) {
             border-left: 4px solid #667eea;
         }
 
+
+
+
+       /* Reminders Card */
+.reminders-card {
+    background: white;
+    padding: 25px 30px;
+    border-radius: 12px;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+    margin-bottom: 30px;
+}
+
+.reminders-card h3 {
+    font-size: 22px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #ff9800; /* Use a vibrant color for the clock icon */
+}
+
+.reminders-card ul {
+    list-style: none;
+    padding: 0;
+}
+
+.reminders-card li {
+    display: flex;
+    justify-content: space-between;
+    background: #f8f9ff;
+    padding: 12px 15px;
+    margin-bottom: 12px;
+    border-left: 5px solid #ff9800; /* Highlight color */
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    color: #333;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.reminders-card li:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 152, 0, 0.2);
+}
+
+.reminders-card a {
+    color: #667eea;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.reminders-card a:hover {
+    text-decoration: underline;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
         .record-item .label { font-size: 12px; color: #666; text-transform: uppercase; }
         .record-item .value { font-size: 20px; font-weight: bold; color: #333; }
 
@@ -303,6 +384,22 @@ while ($row = $chartQuery->fetch_assoc()) {
              <a href="bmi.php" class="action-btn"> Go to Calculate </a>
 </div>
 
+
+<div class="reminders-card">
+    <h3>⏰ Today's Reminders</h3>
+    <?php if($todayReminders->num_rows > 0): ?>
+        <ul>
+        <?php while($r = $todayReminders->fetch_assoc()): ?>
+            <li>
+                <span><?php echo htmlspecialchars($r['reminder_text']); ?></span>
+                <span><?php echo $r['reminder_time']; ?></span>
+            </li>
+        <?php endwhile; ?>
+        </ul>
+    <?php else: ?>
+        <p>No reminders for today. Add one <a href="reminders.php">here</a>.</p>
+    <?php endif; ?>
+</div>
 
 
 
@@ -578,6 +675,44 @@ new Chart(stepsCtx, {
     }
 });
 
+
+
+
+
+
+const reminders = <?php
+$remindersArr = [];
+$todayReminders = $conn->query("SELECT * FROM reminders WHERE user_id='$uid'");
+while($row = $todayReminders->fetch_assoc()) {
+    $remindersArr[] = ['text'=>$row['reminder_text'], 'time'=>$row['reminder_time']];
+}
+echo json_encode($remindersArr);
+?>;
+
+function checkReminders() {
+    const now = new Date();
+    reminders.forEach(r => {
+        const [h, m] = r.time.split(':');
+        if(now.getHours() === parseInt(h) && now.getMinutes() === parseInt(m)) {
+            if(Notification.permission === "granted") {
+                new Notification("HealthTrack Reminder", { body: r.text });
+            }
+        }
+    });
+}
+
+// Ask for notification permission
+if(Notification.permission !== "granted") {
+    Notification.requestPermission();
+}
+
+// Check every minute
+setInterval(checkReminders, 60000);
+
+
+
+
+
 // Calories Chart with Gradient
 const caloriesCtx = document.getElementById('caloriesChart').getContext('2d');
 const caloriesGradient = createGradient(caloriesCtx, 'rgba(255, 152, 0, 0.4)', 'rgba(255, 152, 0, 0.01)');
@@ -673,9 +808,6 @@ new Chart(caloriesCtx, {
         }
     }
 });
-
-
-
 
 
 
