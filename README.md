@@ -51,7 +51,3 @@ Developed a high-performance, fully responsive dashboard with goal tracking, rem
 - XAMPP / WAMP / LAMP stack
 - Modern web browser (Chrome, Firefox, Edge)
 
-### Installation
-1. Clone the repository:
-   ```bash
-   git clone [YOUR_REPOSITORY_URL]
