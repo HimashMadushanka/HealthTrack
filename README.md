@@ -1,5 +1,7 @@
 # HealthTrack Dashboard
 
+![HealthTrack Logo](https://via.placeholder.com/150)
+
 ## 🚀 Project Spotlight
 Excited to share the launch of **HealthTrack Dashboard** – a modern health tracking web app that helps users log, monitor, and visualize daily health metrics like weight, steps, calories, and blood pressure.  
 
@@ -33,6 +35,15 @@ Developed a high-performance, fully responsive dashboard with goal tracking, rem
 
 ---
 
+## 👥 Screenshots
+
+### Dashboard
+<img width="1915" height="922" alt="Capture1" src="https://github.com/user-attachments/assets/5bc9f844-d741-479f-8d52-9e2b0c3c552f" />
+
+### Charts & Metrics
+<img width="682" height="870" alt="Capture4" src="https://github.com/user-attachments/assets/b0e471df-e5cb-4c4e-a159-46afbc19d52f" />
+
+---
 
 ## 🛠️ Getting Started
 
@@ -45,8 +56,4 @@ Developed a high-performance, fully responsive dashboard with goal tracking, rem
 ### Installation
 1. Clone the repository:
    ```bash
-
- <img width="1915" height="922" alt="Capture1" src="https://github.com/user-attachments/assets/6ffe3f84-eab1-4445-9f5d-a54a9ca9e946" />
-
-
-
+   git clone [YOUR_REPOSITORY_URL]
