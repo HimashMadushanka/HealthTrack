@@ -45,6 +45,8 @@ Developed a high-performance, fully responsive dashboard with goal tracking, rem
 ### Installation
 1. Clone the repository:
    ```bash
-   git clone [YOUR_REPOSITORY_URL]
+
+ <img width="1915" height="922" alt="Capture1" src="https://github.com/user-attachments/assets/6ffe3f84-eab1-4445-9f5d-a54a9ca9e946" />
+
 
 
