@@ -1,7 +1,5 @@
 # HealthTrack Dashboard
 
-![HealthTrack Logo](https://via.placeholder.com/150)
-
 ## 🚀 Project Spotlight
 Excited to share the launch of **HealthTrack Dashboard** – a modern health tracking web app that helps users log, monitor, and visualize daily health metrics like weight, steps, calories, and blood pressure.  
 
