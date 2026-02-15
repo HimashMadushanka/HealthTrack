@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 07, 2025 at 05:27 PM
+-- Generation Time: Feb 14, 2026 at 03:51 PM
 -- Server version: 10.4.32-MariaDB
--- PHP Version: 8.0.30
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -87,7 +87,8 @@ CREATE TABLE `health_records` (
 INSERT INTO `health_records` (`id`, `user_id`, `weight`, `calories`, `steps`, `bp`, `date`, `bmi`, `created_at`) VALUES
 (2, 1, 78.50, 3000, 78444, '120/78', '2025-10-04', NULL, '2025-10-05 09:33:04'),
 (3, 1, 34.50, 4500, 85555, '120/56', '2025-10-04', NULL, '2025-10-05 09:33:04'),
-(4, 1, 67.80, 2000, 78955, '145/84', '2025-10-04', NULL, '2025-10-05 09:33:04');
+(4, 1, 67.80, 2000, 78955, '145/84', '2025-10-04', NULL, '2025-10-05 09:33:04'),
+(5, 1, 45.20, 322455, 788562226, '120/78', '2025-10-08', NULL, '2025-10-07 19:44:32');
 
 -- --------------------------------------------------------
 
@@ -184,7 +185,7 @@ ALTER TABLE `goals`
 -- AUTO_INCREMENT for table `health_records`
 --
 ALTER TABLE `health_records`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `reminders`
